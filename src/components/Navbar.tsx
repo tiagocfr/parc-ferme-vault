@@ -40,9 +40,11 @@ const Navbar = () => {
         </div>
 
         {/* CTA */}
-        <Button variant="heroOutline" size="sm" className="text-xs">
-          Solicitar Acesso
-        </Button>
+        <a href="/login">
+          <Button variant="heroOutline" size="sm" className="text-xs">
+            Solicitar Acesso
+          </Button>
+        </a>
       </div>
     </nav>
   );
