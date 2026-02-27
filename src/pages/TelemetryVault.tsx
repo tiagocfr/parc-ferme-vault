@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import {
   LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine,
 } from "recharts";
+import { motion } from "framer-motion";
+import { staggerContainer, fadeUp, chartReveal, glowPulse, slideInLeft } from "@/lib/animations";
 
 // Mock telemetry session data (simulating ~60 seconds of log)
 const generateSession = () =>
@@ -38,39 +40,51 @@ const TelemetryVault = () => {
   const [activeSession] = useState(sessions[0]);
 
   return (
-    <div className="space-y-6 max-w-7xl">
+    <motion.div className="space-y-6 max-w-7xl" variants={staggerContainer} initial="hidden" animate="show">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <motion.div className="flex items-center justify-between" variants={fadeUp}>
         <div>
           <h1 className="text-2xl font-bold">Telemetry Vault</h1>
           <p className="text-sm text-muted-foreground mt-1">Upload, analise e monitore dados de ECU</p>
         </div>
-        <Button variant="outline" size="sm" className="font-mono text-xs gap-2">
-          <Upload className="w-3 h-3" /> Upload Log
-        </Button>
-      </div>
+        <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+          <Button variant="outline" size="sm" className="font-mono text-xs gap-2">
+            <Upload className="w-3 h-3" /> Upload Log
+          </Button>
+        </motion.div>
+      </motion.div>
 
       {/* Upload Zone */}
-      <div className="border-2 border-dashed border-border rounded-lg p-8 flex flex-col items-center justify-center hover:border-primary/30 transition-colors cursor-pointer group">
-        <div className="w-12 h-12 rounded-lg bg-secondary flex items-center justify-center mb-3 group-hover:bg-primary/10 transition-colors">
+      <motion.div
+        variants={fadeUp}
+        className="border-2 border-dashed border-border rounded-lg p-8 flex flex-col items-center justify-center hover:border-primary/30 transition-colors cursor-pointer group"
+        whileHover={{ borderColor: "hsl(145, 100%, 50%, 0.3)", transition: { duration: 0.3 } }}
+      >
+        <motion.div
+          className="w-12 h-12 rounded-lg bg-secondary flex items-center justify-center mb-3 group-hover:bg-primary/10 transition-colors"
+          whileHover={{ rotate: 5, scale: 1.1 }}
+        >
           <Upload className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
-        </div>
+        </motion.div>
         <p className="text-sm font-medium mb-1">Arraste arquivos de log aqui</p>
         <p className="text-xs text-muted-foreground font-mono">.dat .csv .ld (FuelTech, MoTeC, Hondata)</p>
         <p className="text-[10px] text-muted-foreground mt-2">Máximo 100MB por arquivo</p>
-      </div>
+      </motion.div>
 
       {/* Session List + Detail */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+      <motion.div className="grid grid-cols-1 lg:grid-cols-4 gap-4" variants={staggerContainer}>
         {/* Sessions list */}
-        <div className="bg-card border border-border rounded-lg overflow-hidden">
+        <motion.div className="bg-card border border-border rounded-lg overflow-hidden" variants={slideInLeft}>
           <div className="p-3 border-b border-border">
             <h3 className="text-sm font-semibold">Sessões</h3>
           </div>
           <div className="divide-y divide-border/50">
-            {sessions.map((s) => (
-              <div
+            {sessions.map((s, i) => (
+              <motion.div
                 key={s.id}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.3 + i * 0.08 }}
                 className={`p-3 cursor-pointer transition-colors hover:bg-secondary/50 ${
                   s.id === activeSession.id ? "bg-secondary border-l-2 border-l-primary" : ""
                 }`}
@@ -89,32 +103,46 @@ const TelemetryVault = () => {
                   <span className="text-[10px] text-muted-foreground font-mono">{s.duration}</span>
                   <span className="text-[10px] text-muted-foreground ml-auto">{s.date}</span>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
-        </div>
+        </motion.div>
 
         {/* Telemetry Charts */}
         <div className="lg:col-span-3 space-y-4">
           {/* Health Score Banner */}
-          <div className="bg-card border border-primary/30 rounded-lg p-4 glow-green-sm flex items-center justify-between">
+          <motion.div
+            className="bg-card border border-primary/30 rounded-lg p-4 glow-green-sm flex items-center justify-between"
+            variants={glowPulse}
+          >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <motion.div
+                className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center"
+                animate={{ boxShadow: ["0 0 0px hsl(145, 100%, 50%, 0)", "0 0 15px hsl(145, 100%, 50%, 0.2)", "0 0 0px hsl(145, 100%, 50%, 0)"] }}
+                transition={{ repeat: Infinity, duration: 3 }}
+              >
                 <Activity className="w-5 h-5 text-primary" />
-              </div>
+              </motion.div>
               <div>
                 <p className="text-sm font-semibold">Health Check Score</p>
                 <p className="text-[10px] text-muted-foreground font-mono">{activeSession.id} · {activeSession.vehicle}</p>
               </div>
             </div>
             <div className="text-right">
-              <p className="text-3xl font-bold font-mono-data text-neon">97<span className="text-lg">/100</span></p>
+              <motion.p
+                className="text-3xl font-bold font-mono-data text-neon"
+                initial={{ opacity: 0, scale: 0.5 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.5, type: "spring", stiffness: 200 }}
+              >
+                97<span className="text-lg">/100</span>
+              </motion.p>
               <p className="text-[10px] text-muted-foreground">Nenhuma anomalia crítica</p>
             </div>
-          </div>
+          </motion.div>
 
           {/* RPM + Boost */}
-          <div className="bg-card border border-border rounded-lg p-4">
+          <motion.div className="bg-card border border-border rounded-lg p-4" variants={chartReveal} style={{ transformOrigin: "left" }}>
             <div className="flex items-center gap-2 mb-3">
               <Gauge className="w-4 h-4 text-primary" />
               <h3 className="text-sm font-semibold">RPM & Boost</h3>
@@ -132,11 +160,11 @@ const TelemetryVault = () => {
                 </LineChart>
               </ResponsiveContainer>
             </div>
-          </div>
+          </motion.div>
 
           {/* Oil & AFR */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-card border border-border rounded-lg p-4">
+          <motion.div className="grid grid-cols-1 md:grid-cols-2 gap-4" variants={staggerContainer}>
+            <motion.div className="bg-card border border-border rounded-lg p-4" variants={chartReveal} style={{ transformOrigin: "left" }}>
               <div className="flex items-center gap-2 mb-3">
                 <ThermometerSun className="w-4 h-4 text-orange-400" />
                 <h3 className="text-sm font-semibold">Óleo — Temp & Pressão</h3>
@@ -159,9 +187,9 @@ const TelemetryVault = () => {
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
-            </div>
+            </motion.div>
 
-            <div className="bg-card border border-border rounded-lg p-4">
+            <motion.div className="bg-card border border-border rounded-lg p-4" variants={chartReveal} style={{ transformOrigin: "right" }}>
               <div className="flex items-center gap-2 mb-3">
                 <Activity className="w-4 h-4 text-primary" />
                 <h3 className="text-sm font-semibold">AFR (Air-Fuel Ratio)</h3>
@@ -179,11 +207,11 @@ const TelemetryVault = () => {
                   </LineChart>
                 </ResponsiveContainer>
               </div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };
 

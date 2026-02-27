@@ -1,5 +1,7 @@
 import { Car, Activity, DollarSign, Shield, ArrowUpRight, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { motion } from "framer-motion";
+import { staggerContainer, fadeUp, scaleIn, slideInRight, chartReveal, glowPulse } from "@/lib/animations";
 
 const mockTelemetry = Array.from({ length: 30 }, (_, i) => ({
   day: `${i + 1}`,
@@ -44,37 +46,52 @@ const vehicles = [
   },
 ];
 
-const StatCard = ({ icon: Icon, label, value, sub }: { icon: any; label: string; value: string; sub?: string }) => (
-  <div className="bg-card border border-border rounded-lg p-4 hover:border-primary/30 transition-colors">
+const StatCard = ({ icon: Icon, label, value, sub, index }: { icon: any; label: string; value: string; sub?: string; index: number }) => (
+  <motion.div
+    variants={fadeUp}
+    className="bg-card border border-border rounded-lg p-4 hover:border-primary/30 transition-colors"
+    whileHover={{ y: -2, transition: { duration: 0.2 } }}
+  >
     <div className="flex items-center justify-between mb-3">
       <span className="font-mono text-[10px] text-muted-foreground tracking-wider uppercase">{label}</span>
-      <Icon className="w-4 h-4 text-primary" />
+      <motion.div
+        initial={{ rotate: -20, opacity: 0 }}
+        animate={{ rotate: 0, opacity: 1 }}
+        transition={{ delay: 0.3 + index * 0.1, duration: 0.4 }}
+      >
+        <Icon className="w-4 h-4 text-primary" />
+      </motion.div>
     </div>
     <p className="text-2xl font-bold font-mono-data">{value}</p>
     {sub && <p className="text-xs text-muted-foreground mt-1">{sub}</p>}
-  </div>
+  </motion.div>
 );
 
 const Dashboard = () => {
   return (
-    <div className="space-y-6 max-w-7xl">
+    <motion.div
+      className="space-y-6 max-w-7xl"
+      variants={staggerContainer}
+      initial="hidden"
+      animate="show"
+    >
       {/* Header */}
-      <div>
+      <motion.div variants={fadeUp}>
         <h1 className="text-2xl font-bold">Dashboard</h1>
         <p className="text-sm text-muted-foreground mt-1">Visão geral dos seus ativos automotivos</p>
-      </div>
+      </motion.div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon={Car} label="Veículos" value="3" sub="Ativos no vault" />
-        <StatCard icon={DollarSign} label="Total Asset Value" value="R$ 4.03M" sub="+12.4% vs. aquisição" />
-        <StatCard icon={Activity} label="Sessões Telemetria" value="47" sub="Últimos 90 dias" />
-        <StatCard icon={Shield} label="Health Score" value="94%" sub="Média da frota" />
-      </div>
+      <motion.div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" variants={staggerContainer}>
+        <StatCard icon={Car} label="Veículos" value="3" sub="Ativos no vault" index={0} />
+        <StatCard icon={DollarSign} label="Total Asset Value" value="R$ 4.03M" sub="+12.4% vs. aquisição" index={1} />
+        <StatCard icon={Activity} label="Sessões Telemetria" value="47" sub="Últimos 90 dias" index={2} />
+        <StatCard icon={Shield} label="Health Score" value="94%" sub="Média da frota" index={3} />
+      </motion.div>
 
       {/* Chart + Alerts */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 bg-card border border-border rounded-lg p-4">
+      <motion.div className="grid grid-cols-1 lg:grid-cols-3 gap-4" variants={staggerContainer}>
+        <motion.div className="lg:col-span-2 bg-card border border-border rounded-lg p-4" variants={chartReveal} style={{ transformOrigin: "left" }}>
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-sm font-semibold">Telemetria Agregada</h3>
@@ -106,51 +123,58 @@ const Dashboard = () => {
               </AreaChart>
             </ResponsiveContainer>
           </div>
-        </div>
+        </motion.div>
 
         {/* Alerts */}
-        <div className="bg-card border border-border rounded-lg p-4">
+        <motion.div className="bg-card border border-border rounded-lg p-4" variants={slideInRight}>
           <h3 className="text-sm font-semibold mb-4">Alertas Recentes</h3>
-          <div className="space-y-3">
-            <div className="flex items-start gap-3 p-3 rounded bg-destructive/10 border border-destructive/20">
+          <motion.div className="space-y-3" variants={staggerContainer} initial="hidden" animate="show">
+            <motion.div variants={fadeUp} className="flex items-start gap-3 p-3 rounded bg-destructive/10 border border-destructive/20">
               <AlertTriangle className="w-4 h-4 text-destructive mt-0.5 shrink-0" />
               <div>
                 <p className="text-xs font-medium">Mistura Pobre Detectada</p>
                 <p className="text-[10px] text-muted-foreground font-mono mt-0.5">BMW M3 E30 · AFR 15.2 @ 6800rpm</p>
                 <p className="text-[10px] text-muted-foreground">08 Feb 2026 · Track Day Interlagos</p>
               </div>
-            </div>
-            <div className="flex items-start gap-3 p-3 rounded bg-neon-green/5 border border-primary/20">
+            </motion.div>
+            <motion.div variants={fadeUp} className="flex items-start gap-3 p-3 rounded bg-neon-green/5 border border-primary/20">
               <AlertTriangle className="w-4 h-4 text-yellow-500 mt-0.5 shrink-0" />
               <div>
                 <p className="text-xs font-medium">Óleo Próximo ao Limite</p>
                 <p className="text-[10px] text-muted-foreground font-mono mt-0.5">BMW M3 E30 · 42h desde troca</p>
                 <p className="text-[10px] text-muted-foreground">Recomendação: trocar em 8h de uso</p>
               </div>
-            </div>
-            <div className="flex items-start gap-3 p-3 rounded bg-secondary border border-border">
+            </motion.div>
+            <motion.div variants={fadeUp} className="flex items-start gap-3 p-3 rounded bg-secondary border border-border">
               <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 shrink-0" />
               <div>
                 <p className="text-xs font-medium">Health Check Aprovado</p>
                 <p className="text-[10px] text-muted-foreground font-mono mt-0.5">GT-R R35 · Score 97/100</p>
                 <p className="text-[10px] text-muted-foreground">20 Feb 2026 · Log #1847</p>
               </div>
-            </div>
-          </div>
-        </div>
-      </div>
+            </motion.div>
+          </motion.div>
+        </motion.div>
+      </motion.div>
 
       {/* Vehicle Cards */}
-      <div>
+      <motion.div variants={fadeUp}>
         <h3 className="text-sm font-semibold mb-4">Seus Veículos</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {vehicles.map((v) => (
-            <div
+        <motion.div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" variants={staggerContainer}>
+          {vehicles.map((v, i) => (
+            <motion.div
               key={v.id}
+              variants={scaleIn}
               className="bg-card border border-border rounded-lg p-4 hover:border-primary/30 transition-all group cursor-pointer"
+              whileHover={{ y: -4, transition: { duration: 0.2 } }}
+              whileTap={{ scale: 0.98 }}
             >
               <div className="flex items-center justify-between mb-3">
-                <div className={`w-2 h-2 rounded-full ${v.status === "healthy" ? "bg-primary" : "bg-yellow-500"}`} />
+                <motion.div
+                  className={`w-2 h-2 rounded-full ${v.status === "healthy" ? "bg-primary" : "bg-yellow-500"}`}
+                  animate={{ scale: [1, 1.3, 1] }}
+                  transition={{ repeat: Infinity, duration: 2, delay: i * 0.5 }}
+                />
                 <span className="font-mono text-[10px] text-muted-foreground">{v.chassis.slice(0, 11)}...</span>
               </div>
               <h4 className="font-semibold text-sm mb-1">{v.name}</h4>
@@ -171,11 +195,11 @@ const Dashboard = () => {
                 </span>
                 <ArrowUpRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
               </div>
-            </div>
+            </motion.div>
           ))}
-        </div>
-      </div>
-    </div>
+        </motion.div>
+      </motion.div>
+    </motion.div>
   );
 };
 
