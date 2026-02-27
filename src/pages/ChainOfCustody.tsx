@@ -1,5 +1,7 @@
 import { Shield, ExternalLink, CheckCircle2, Wrench, Activity, FileText, Hash, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { motion } from "framer-motion";
+import { staggerContainer, fadeUp, scaleIn, glowPulse } from "@/lib/animations";
 
 const events = [
   {
@@ -90,23 +92,27 @@ const typeLabels: Record<string, string> = {
 
 const ChainOfCustody = () => {
   return (
-    <div className="space-y-6 max-w-5xl">
+    <motion.div className="space-y-6 max-w-5xl" variants={staggerContainer} initial="hidden" animate="show">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <motion.div className="flex items-center justify-between" variants={fadeUp}>
         <div>
           <h1 className="text-2xl font-bold">Chain of Custody</h1>
           <p className="text-sm text-muted-foreground mt-1">Ledger de eventos verificados — BMW M3 E30 Restomod</p>
         </div>
-        <Button variant="outline" size="sm" className="font-mono text-xs gap-2">
-          <ExternalLink className="w-3 h-3" /> Gerar Certificado Público
-        </Button>
-      </div>
+        <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+          <Button variant="outline" size="sm" className="font-mono text-xs gap-2">
+            <ExternalLink className="w-3 h-3" /> Gerar Certificado Público
+          </Button>
+        </motion.div>
+      </motion.div>
 
       {/* Certificate Preview Card */}
-      <div className="bg-card border border-primary/30 rounded-lg p-5 glow-green-sm">
+      <motion.div className="bg-card border border-primary/30 rounded-lg p-5 glow-green-sm" variants={glowPulse}>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <Shield className="w-5 h-5 text-primary" />
+            <motion.div animate={{ rotate: [0, 5, -5, 0] }} transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}>
+              <Shield className="w-5 h-5 text-primary" />
+            </motion.div>
             <div>
               <p className="text-sm font-semibold">Certificado de Procedência</p>
               <p className="text-[10px] text-muted-foreground font-mono">BMW M3 E30 Restomod · WBAAK0301LAE76543</p>
@@ -117,42 +123,56 @@ const ChainOfCustody = () => {
             <p className="text-[10px] text-muted-foreground">Última atualização: 20 Feb 2026</p>
           </div>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div>
-            <p className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">Health Score</p>
-            <p className="text-lg font-bold font-mono-data text-neon">97/100</p>
-          </div>
-          <div>
-            <p className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">Build Value</p>
-            <p className="text-lg font-bold font-mono-data">R$ 146.5k</p>
-          </div>
-          <div>
-            <p className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">Sessões</p>
-            <p className="text-lg font-bold font-mono-data">12</p>
-          </div>
-          <div>
-            <p className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">Oficinas</p>
-            <p className="text-lg font-bold font-mono-data">3</p>
-          </div>
-        </div>
-      </div>
+        <motion.div className="grid grid-cols-2 md:grid-cols-4 gap-4" variants={staggerContainer}>
+          {[
+            { label: "Health Score", value: "97/100", neon: true },
+            { label: "Build Value", value: "R$ 146.5k" },
+            { label: "Sessões", value: "12" },
+            { label: "Oficinas", value: "3" },
+          ].map((item) => (
+            <motion.div key={item.label} variants={scaleIn}>
+              <p className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">{item.label}</p>
+              <p className={`text-lg font-bold font-mono-data ${item.neon ? "text-neon" : ""}`}>{item.value}</p>
+            </motion.div>
+          ))}
+        </motion.div>
+      </motion.div>
 
       {/* Timeline */}
       <div className="relative">
-        {/* Vertical line */}
-        <div className="absolute left-5 top-0 bottom-0 w-px bg-border" />
+        <motion.div
+          className="absolute left-5 top-0 bottom-0 w-px bg-border"
+          initial={{ scaleY: 0 }}
+          animate={{ scaleY: 1 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          style={{ transformOrigin: "top" }}
+        />
 
         <div className="space-y-1">
           {events.map((evt, i) => {
             const Icon = typeIcons[evt.type] || FileText;
             return (
-              <div key={evt.id} className="relative pl-12">
+              <motion.div
+                key={evt.id}
+                className="relative pl-12"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.2 + i * 0.08, duration: 0.4, ease: [0.25, 0.4, 0.25, 1] }}
+              >
                 {/* Dot */}
-                <div className="absolute left-3.5 top-4 w-3 h-3 rounded-full bg-card border-2 border-primary flex items-center justify-center z-10">
+                <motion.div
+                  className="absolute left-3.5 top-4 w-3 h-3 rounded-full bg-card border-2 border-primary flex items-center justify-center z-10"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.3 + i * 0.08, type: "spring", stiffness: 300 }}
+                >
                   {evt.verified && <div className="w-1.5 h-1.5 rounded-full bg-primary" />}
-                </div>
+                </motion.div>
 
-                <div className="bg-card border border-border rounded-lg p-4 hover:border-primary/20 transition-colors">
+                <motion.div
+                  className="bg-card border border-border rounded-lg p-4 hover:border-primary/20 transition-colors"
+                  whileHover={{ x: 4, transition: { duration: 0.2 } }}
+                >
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 rounded bg-secondary flex items-center justify-center">
@@ -186,13 +206,13 @@ const ChainOfCustody = () => {
                       <Copy className="w-3 h-3 ml-1" />
                     </div>
                   </div>
-                </div>
-              </div>
+                </motion.div>
+              </motion.div>
             );
           })}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Car, Wrench, DollarSign, Clock, ChevronDown, ChevronRight, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { motion, AnimatePresence } from "framer-motion";
+import { staggerContainer, fadeUp, scaleIn } from "@/lib/animations";
 
 interface Component {
   name: string;
@@ -59,7 +61,12 @@ const LifeBar = ({ used, max }: { used: number; max: number }) => {
   return (
     <div className="flex items-center gap-2">
       <div className="flex-1 h-1.5 bg-secondary rounded-full overflow-hidden">
-        <div className={`h-full ${color} rounded-full transition-all`} style={{ width: `${pct}%` }} />
+        <motion.div
+          className={`h-full ${color} rounded-full`}
+          initial={{ width: 0 }}
+          animate={{ width: `${pct}%` }}
+          transition={{ duration: 0.8, ease: [0.25, 0.4, 0.25, 1], delay: 0.3 }}
+        />
       </div>
       <span className="font-mono text-[10px] text-muted-foreground w-14 text-right">{used}/{max}h</span>
     </div>
@@ -76,9 +83,23 @@ const ComponentRow = ({ comp, depth = 0 }: { comp: Component; depth?: number }) 
         <td className="py-2.5 px-3" style={{ paddingLeft: `${12 + depth * 24}px` }}>
           <div className="flex items-center gap-2">
             {hasChildren ? (
-              <button onClick={() => setOpen(!open)} className="text-muted-foreground hover:text-foreground">
-                {open ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-              </button>
+              <motion.button
+                onClick={() => setOpen(!open)}
+                className="text-muted-foreground hover:text-foreground"
+                animate={{ rotate: open ? 0 : 0 }}
+              >
+                <AnimatePresence mode="wait" initial={false}>
+                  {open ? (
+                    <motion.div key="down" initial={{ rotate: -90 }} animate={{ rotate: 0 }} transition={{ duration: 0.2 }}>
+                      <ChevronDown className="w-3 h-3" />
+                    </motion.div>
+                  ) : (
+                    <motion.div key="right" initial={{ rotate: 90 }} animate={{ rotate: 0 }} transition={{ duration: 0.2 }}>
+                      <ChevronRight className="w-3 h-3" />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.button>
             ) : (
               <span className="w-3" />
             )}
@@ -92,9 +113,31 @@ const ComponentRow = ({ comp, depth = 0 }: { comp: Component; depth?: number }) 
           <LifeBar used={comp.hoursUsed} max={comp.maxHours} />
         </td>
       </tr>
-      {open && comp.children?.map((child, i) => (
-        <ComponentRow key={i} comp={child} depth={depth + 1} />
-      ))}
+      <AnimatePresence>
+        {open && comp.children?.map((child, i) => (
+          <motion.tr
+            key={i}
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="border-b border-border/50 hover:bg-secondary/30 transition-colors"
+          >
+            <td className="py-2.5 px-3" style={{ paddingLeft: `${12 + (depth + 1) * 24}px` }}>
+              <div className="flex items-center gap-2">
+                <span className="w-3" />
+                <span className="text-xs font-medium">{child.name}</span>
+              </div>
+            </td>
+            <td className="py-2.5 px-3 text-xs text-muted-foreground font-mono">{child.brand}</td>
+            <td className="py-2.5 px-3 text-xs text-muted-foreground font-mono">{child.installed}</td>
+            <td className="py-2.5 px-3 text-xs font-mono-data">{child.cost}</td>
+            <td className="py-2.5 px-3 w-40">
+              <LifeBar used={child.hoursUsed} max={child.maxHours} />
+            </td>
+          </motion.tr>
+        ))}
+      </AnimatePresence>
     </>
   );
 };
@@ -105,49 +148,55 @@ const DigitalChassis = () => {
   const totalAsset = "R$ 1.126.500";
 
   return (
-    <div className="space-y-6 max-w-7xl">
+    <motion.div className="space-y-6 max-w-7xl" variants={staggerContainer} initial="hidden" animate="show">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <motion.div className="flex items-center justify-between" variants={fadeUp}>
         <div>
           <h1 className="text-2xl font-bold">Digital Chassis</h1>
           <p className="text-sm text-muted-foreground mt-1">BMW M3 E30 Restomod · WBA-AK03-01L-AE76543</p>
         </div>
-        <Button variant="outline" size="sm" className="font-mono text-xs gap-2">
-          <Plus className="w-3 h-3" /> Adicionar Componente
-        </Button>
-      </div>
+        <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+          <Button variant="outline" size="sm" className="font-mono text-xs gap-2">
+            <Plus className="w-3 h-3" /> Adicionar Componente
+          </Button>
+        </motion.div>
+      </motion.div>
 
       {/* TCO Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-card border border-border rounded-lg p-4">
+      <motion.div className="grid grid-cols-1 sm:grid-cols-3 gap-4" variants={staggerContainer}>
+        <motion.div variants={fadeUp} className="bg-card border border-border rounded-lg p-4" whileHover={{ y: -2 }}>
           <div className="flex items-center gap-2 mb-2">
             <Car className="w-4 h-4 text-muted-foreground" />
             <span className="font-mono text-[10px] text-muted-foreground tracking-wider uppercase">Valor do Chassi</span>
           </div>
           <p className="text-xl font-bold font-mono-data">{chassisValue}</p>
           <p className="text-[10px] text-muted-foreground mt-1">Valor de mercado base</p>
-        </div>
-        <div className="bg-card border border-border rounded-lg p-4">
+        </motion.div>
+        <motion.div variants={fadeUp} className="bg-card border border-border rounded-lg p-4" whileHover={{ y: -2 }}>
           <div className="flex items-center gap-2 mb-2">
             <Wrench className="w-4 h-4 text-primary" />
             <span className="font-mono text-[10px] text-muted-foreground tracking-wider uppercase">Build Value</span>
           </div>
           <p className="text-xl font-bold font-mono-data text-neon">{totalBuild}</p>
           <p className="text-[10px] text-muted-foreground mt-1">23 componentes rastreados</p>
-        </div>
-        <div className="bg-card border border-primary/30 rounded-lg p-4 glow-green-sm">
+        </motion.div>
+        <motion.div variants={scaleIn} className="bg-card border border-primary/30 rounded-lg p-4 glow-green-sm" whileHover={{ y: -2 }}>
           <div className="flex items-center gap-2 mb-2">
             <DollarSign className="w-4 h-4 text-primary" />
             <span className="font-mono text-[10px] text-primary tracking-wider uppercase">Total Asset Value</span>
           </div>
           <p className="text-xl font-bold font-mono-data">{totalAsset}</p>
           <p className="text-[10px] text-muted-foreground mt-1">Chassi + Hardware investido</p>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
 
       {/* Build Tree */}
-      {buildTree.map((section) => (
-        <div key={section.category} className="bg-card border border-border rounded-lg overflow-hidden">
+      {buildTree.map((section, sIdx) => (
+        <motion.div
+          key={section.category}
+          className="bg-card border border-border rounded-lg overflow-hidden"
+          variants={fadeUp}
+        >
           <div className="px-4 py-3 border-b border-border flex items-center gap-2">
             <section.icon className="w-4 h-4 text-primary" />
             <h3 className="text-sm font-semibold">{section.category}</h3>
@@ -173,9 +222,9 @@ const DigitalChassis = () => {
               </tbody>
             </table>
           </div>
-        </div>
+        </motion.div>
       ))}
-    </div>
+    </motion.div>
   );
 };
 
