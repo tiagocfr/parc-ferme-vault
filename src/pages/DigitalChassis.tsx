@@ -3,6 +3,7 @@ import { Car, Wrench, DollarSign, Clock, ChevronDown, ChevronRight, Plus } from 
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { staggerContainer, fadeUp, scaleIn } from "@/lib/animations";
+import CarWireframe3D from "@/components/platform/CarWireframe3D";
 
 interface Component {
   name: string;
@@ -188,6 +189,11 @@ const DigitalChassis = () => {
           <p className="text-xl font-bold font-mono-data">{totalAsset}</p>
           <p className="text-[10px] text-muted-foreground mt-1">Chassi + Hardware investido</p>
         </motion.div>
+      </motion.div>
+
+      {/* 3D Wireframe Viewer */}
+      <motion.div variants={fadeUp}>
+        <CarWireframe3D profile="sedan" label="BMW M3 E30 Restomod" />
       </motion.div>
 
       {/* Build Tree */}
