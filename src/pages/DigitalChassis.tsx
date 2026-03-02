@@ -193,7 +193,7 @@ const DigitalChassis = () => {
 
       {/* 3D Wireframe Viewer */}
       <motion.div variants={fadeUp}>
-        <CarWireframe3D profile="sedan" label="BMW M3 E30 Restomod" />
+        <CarWireframe3D profile="e30" label="BMW M3 E30 Restomod" />
       </motion.div>
 
       {/* Build Tree */}
