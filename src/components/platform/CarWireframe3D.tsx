@@ -65,33 +65,61 @@ function LoadingFallback() {
   );
 }
 
+function Helipad() {
+  return (
+    <group position={[0, -1, 0]}>
+      {/* Main platform */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[6, 6, 0.15, 64]} />
+        <meshStandardMaterial color="#888888" roughness={0.8} metalness={0.2} />
+      </mesh>
+      {/* Inner circle marking */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.08, 0]}>
+        <ringGeometry args={[3.8, 4, 64]} />
+        <meshStandardMaterial color="#cccc00" roughness={0.6} />
+      </mesh>
+      {/* H letter - left vertical */}
+      <mesh position={[-0.6, 0.09, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[0.35, 2.4]} />
+        <meshStandardMaterial color="#ffffff" roughness={0.5} />
+      </mesh>
+      {/* H letter - right vertical */}
+      <mesh position={[0.6, 0.09, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[0.35, 2.4]} />
+        <meshStandardMaterial color="#ffffff" roughness={0.5} />
+      </mesh>
+      {/* H letter - horizontal bar */}
+      <mesh position={[0, 0.09, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[1.55, 0.35]} />
+        <meshStandardMaterial color="#ffffff" roughness={0.5} />
+      </mesh>
+      {/* Outer edge ring */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.08, 0]}>
+        <ringGeometry args={[5.7, 6, 64]} />
+        <meshStandardMaterial color="#cc0000" roughness={0.6} />
+      </mesh>
+    </group>
+  );
+}
+
 function SceneContent({ path }: { path: string }) {
   return (
     <>
-      <PerspectiveCamera makeDefault position={[4.5, 2.2, 4.5]} fov={32} />
+      <PerspectiveCamera makeDefault position={[6, 3.5, 6]} fov={32} />
       <OrbitControls
         enableDamping
         dampingFactor={0.08}
         enablePan={false}
         minDistance={3}
-        maxDistance={12}
+        maxDistance={14}
         maxPolarAngle={Math.PI / 2.1}
       />
-      <ambientLight intensity={0.8} />
-      <directionalLight position={[5, 5, 5]} intensity={1.2} />
-      <directionalLight position={[-3, 3, -3]} intensity={0.4} />
-      <Environment preset="sunset" background />
-      <Grid
-        args={[20, 20]}
-        cellSize={0.5}
-        cellThickness={0.5}
-        cellColor="hsl(220, 15%, 15%)"
-        sectionSize={2}
-        sectionThickness={1}
-        sectionColor="hsl(220, 15%, 20%)"
-        fadeDistance={15}
-        position={[0, -1, 0]}
-      />
+      <ambientLight intensity={1.2} />
+      <directionalLight position={[8, 10, 5]} intensity={2} castShadow />
+      <directionalLight position={[-5, 5, -5]} intensity={0.6} />
+      <hemisphereLight args={["#87CEEB", "#444444", 0.8]} />
+      <Environment preset="city" background />
+      <Helipad />
       <Suspense fallback={<LoadingFallback />}>
         <CarModel path={path} />
       </Suspense>
