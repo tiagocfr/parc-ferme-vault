@@ -1,36 +1,34 @@
 import { useRef, Suspense } from "react";
-import { Canvas, useFrame, useLoader } from "@react-three/fiber";
-import { OrbitControls, Grid, PerspectiveCamera, Center, useGLTF } from "@react-three/drei";
+import { Canvas, useFrame } from "@react-three/fiber";
+import { OrbitControls, Grid, PerspectiveCamera, useGLTF, Environment } from "@react-three/drei";
 import * as THREE from "three";
 import { motion } from "framer-motion";
 import { chartReveal } from "@/lib/animations";
 
-type CarProfile = "911" | "e30" | "gtr";
+export interface CarModelEntry {
+  id: string;
+  label: string;
+  path: string;
+}
+
+export const availableModels: CarModelEntry[] = [
+  { id: "911-turbo", label: "Porsche 911 Turbo S", path: "/models/porsche-911-turbo-s.glb" },
+  { id: "911-gt3", label: "Porsche 911 GT3", path: "/models/porsche-911-gt3.glb" },
+];
 
 interface CarWireframe3DProps {
-  profile?: CarProfile;
+  modelPath: string;
   label?: string;
 }
 
-/**
- * Map each car profile to its .glb file path in /public/models/
- * To add a new car, drop the .glb file in public/models/ and add the mapping here.
- */
-const modelPaths: Record<CarProfile, string> = {
-  e30: "/models/bmw-e30.glb",
-  "911": "/models/porsche-911.glb",
-  gtr: "/models/nissan-gtr.glb",
-};
-
-function CarModel({ profile }: { profile: CarProfile }) {
+function CarModel({ path }: { path: string }) {
   const groupRef = useRef<THREE.Group>(null);
-  const modelPath = modelPaths[profile];
 
   let scene: THREE.Group | null = null;
   let loadError = false;
 
   try {
-    const gltf = useGLTF(modelPath);
+    const gltf = useGLTF(path);
     scene = gltf.scene;
   } catch {
     loadError = true;
@@ -45,32 +43,15 @@ function CarModel({ profile }: { profile: CarProfile }) {
   if (loadError || !scene) {
     return (
       <group ref={groupRef}>
-        {/* Placeholder box when model not found */}
         <mesh position={[0, 0.5, 0]}>
           <boxGeometry args={[3, 0.8, 1.4]} />
-          <meshBasicMaterial color="hsl(145, 100%, 50%)" wireframe />
-        </mesh>
-        <mesh position={[0, 0.5, 0]}>
-          <boxGeometry args={[3.05, 0.85, 1.45]} />
-          <meshBasicMaterial color="hsl(145, 100%, 50%)" wireframe opacity={0.15} transparent />
+          <meshStandardMaterial color="#333" />
         </mesh>
       </group>
     );
   }
 
-  // Apply wireframe material to all meshes
   const cloned = scene.clone(true);
-  cloned.traverse((child) => {
-    if ((child as THREE.Mesh).isMesh) {
-      const mesh = child as THREE.Mesh;
-      mesh.material = new THREE.MeshBasicMaterial({
-        color: new THREE.Color("hsl(145, 100%, 50%)"),
-        wireframe: true,
-        transparent: true,
-        opacity: 0.7,
-      });
-    }
-  });
 
   // Auto-center and scale
   const box = new THREE.Box3().setFromObject(cloned);
@@ -98,12 +79,12 @@ function LoadingFallback() {
   return (
     <mesh ref={ref} position={[0, 0.5, 0]}>
       <boxGeometry args={[2, 0.6, 1]} />
-      <meshBasicMaterial color="hsl(145, 100%, 50%)" wireframe opacity={0.3} transparent />
+      <meshStandardMaterial color="#444" wireframe />
     </mesh>
   );
 }
 
-function SceneContent({ profile }: { profile: CarProfile }) {
+function SceneContent({ path }: { path: string }) {
   return (
     <>
       <PerspectiveCamera makeDefault position={[4.5, 2.2, 4.5]} fov={32} />
@@ -115,7 +96,10 @@ function SceneContent({ profile }: { profile: CarProfile }) {
         maxDistance={12}
         maxPolarAngle={Math.PI / 2.1}
       />
-      <ambientLight intensity={0.5} />
+      <ambientLight intensity={0.8} />
+      <directionalLight position={[5, 5, 5]} intensity={1.2} />
+      <directionalLight position={[-3, 3, -3]} intensity={0.4} />
+      <Environment preset="city" />
       <Grid
         args={[20, 20]}
         cellSize={0.5}
@@ -128,19 +112,13 @@ function SceneContent({ profile }: { profile: CarProfile }) {
         position={[0, 0, 0]}
       />
       <Suspense fallback={<LoadingFallback />}>
-        <CarModel profile={profile} />
+        <CarModel path={path} />
       </Suspense>
     </>
   );
 }
 
-const profileMap: Record<string, CarProfile> = {
-  "Porsche 911 GT3 RS": "911",
-  "BMW M3 E30 Restomod": "e30",
-  "Nissan GT-R R35 Track": "gtr",
-};
-
-export default function CarWireframe3D({ profile = "e30", label }: CarWireframe3DProps) {
+export default function CarWireframe3D({ modelPath, label }: CarWireframe3DProps) {
   return (
     <motion.div
       className="bg-card border border-border rounded-lg overflow-hidden relative"
@@ -166,12 +144,9 @@ export default function CarWireframe3D({ profile = "e30", label }: CarWireframe3
       </div>
       <div className="h-[320px] w-full bg-background/50">
         <Canvas gl={{ antialias: true, alpha: true }} style={{ background: "transparent" }}>
-          <SceneContent profile={profile} />
+          <SceneContent path={modelPath} />
         </Canvas>
       </div>
     </motion.div>
   );
 }
-
-export { profileMap };
-export type { CarProfile };
