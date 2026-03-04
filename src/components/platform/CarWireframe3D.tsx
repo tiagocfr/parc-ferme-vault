@@ -109,7 +109,7 @@ function SceneContent({ path }: { path: string }) {
         sectionThickness={1}
         sectionColor="hsl(220, 15%, 20%)"
         fadeDistance={15}
-        position={[0, 0, 0]}
+        position={[0, -0.01, 0]}
       />
       <Suspense fallback={<LoadingFallback />}>
         <CarModel path={path} />
