@@ -80,7 +80,7 @@ function SceneContent({ path }: { path: string }) {
       <ambientLight intensity={0.8} />
       <directionalLight position={[5, 5, 5]} intensity={1.2} />
       <directionalLight position={[-3, 3, -3]} intensity={0.4} />
-      <Environment preset="city" />
+      <Environment preset="sunset" background />
       <Grid
         args={[20, 20]}
         cellSize={0.5}
