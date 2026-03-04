@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Car, Wrench, DollarSign, Clock, ChevronDown, ChevronRight, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { motion, AnimatePresence } from "framer-motion";
 import { staggerContainer, fadeUp, scaleIn } from "@/lib/animations";
-import CarWireframe3D from "@/components/platform/CarWireframe3D";
+import CarWireframe3D, { availableModels } from "@/components/platform/CarWireframe3D";
 
 interface Component {
   name: string;
@@ -144,9 +145,11 @@ const ComponentRow = ({ comp, depth = 0 }: { comp: Component; depth?: number }) 
 };
 
 const DigitalChassis = () => {
-  const totalBuild = "R$ 146.500";
+  const [selectedModel, setSelectedModel] = useState(availableModels[0].path);
+  const selectedLabel = availableModels.find(m => m.path === selectedModel)?.label ?? "";
   const chassisValue = "R$ 980.000";
   const totalAsset = "R$ 1.126.500";
+  const totalBuild = "R$ 146.500";
 
   return (
     <motion.div className="space-y-6 max-w-7xl" variants={staggerContainer} initial="hidden" animate="show">
@@ -191,9 +194,24 @@ const DigitalChassis = () => {
         </motion.div>
       </motion.div>
 
-      {/* 3D Wireframe Viewer */}
-      <motion.div variants={fadeUp}>
-        <CarWireframe3D profile="e30" label="BMW M3 E30 Restomod" />
+      {/* 3D Model Viewer */}
+      <motion.div variants={fadeUp} className="space-y-3">
+        <div className="flex items-center gap-3">
+          <span className="font-mono text-[10px] text-muted-foreground tracking-wider uppercase">Modelo 3D</span>
+          <Select value={selectedModel} onValueChange={setSelectedModel}>
+            <SelectTrigger className="w-[260px] h-8 text-xs font-mono">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {availableModels.map((m) => (
+                <SelectItem key={m.id} value={m.path} className="text-xs font-mono">
+                  {m.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <CarWireframe3D modelPath={selectedModel} label={selectedLabel} />
       </motion.div>
 
       {/* Build Tree */}
