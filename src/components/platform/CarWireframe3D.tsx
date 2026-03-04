@@ -1,6 +1,6 @@
 import { useRef, Suspense } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls, Grid, PerspectiveCamera, useGLTF, Environment } from "@react-three/drei";
+import { OrbitControls, PerspectiveCamera, useGLTF, Environment } from "@react-three/drei";
 import * as THREE from "three";
 import { motion } from "framer-motion";
 import { chartReveal } from "@/lib/animations";
@@ -65,47 +65,10 @@ function LoadingFallback() {
   );
 }
 
-function Helipad() {
-  return (
-    <group position={[0, -1, 0]}>
-      {/* Main platform */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[6, 6, 0.15, 64]} />
-        <meshStandardMaterial color="#888888" roughness={0.8} metalness={0.2} />
-      </mesh>
-      {/* Inner circle marking */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.08, 0]}>
-        <ringGeometry args={[3.8, 4, 64]} />
-        <meshStandardMaterial color="#cccc00" roughness={0.6} />
-      </mesh>
-      {/* H letter - left vertical */}
-      <mesh position={[-0.6, 0.09, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[0.35, 2.4]} />
-        <meshStandardMaterial color="#ffffff" roughness={0.5} />
-      </mesh>
-      {/* H letter - right vertical */}
-      <mesh position={[0.6, 0.09, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[0.35, 2.4]} />
-        <meshStandardMaterial color="#ffffff" roughness={0.5} />
-      </mesh>
-      {/* H letter - horizontal bar */}
-      <mesh position={[0, 0.09, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[1.55, 0.35]} />
-        <meshStandardMaterial color="#ffffff" roughness={0.5} />
-      </mesh>
-      {/* Outer edge ring */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.08, 0]}>
-        <ringGeometry args={[5.7, 6, 64]} />
-        <meshStandardMaterial color="#cc0000" roughness={0.6} />
-      </mesh>
-    </group>
-  );
-}
-
 function SceneContent({ path }: { path: string }) {
   return (
     <>
-      <PerspectiveCamera makeDefault position={[6, 3.5, 6]} fov={32} />
+      <PerspectiveCamera makeDefault position={[6, 3, 6]} fov={32} />
       <OrbitControls
         enableDamping
         dampingFactor={0.08}
@@ -114,18 +77,24 @@ function SceneContent({ path }: { path: string }) {
         maxDistance={14}
         maxPolarAngle={Math.PI / 2.1}
       />
-      <ambientLight intensity={1.2} />
-      <directionalLight position={[8, 10, 5]} intensity={2} castShadow />
-      <directionalLight position={[-5, 5, -5]} intensity={0.6} />
-      <hemisphereLight args={["#87CEEB", "#444444", 0.8]} />
-      <Environment preset="city" background />
-      <Helipad />
+      <ambientLight intensity={1.8} />
+      <directionalLight position={[5, 8, 5]} intensity={1.5} />
+      <directionalLight position={[-5, 5, -5]} intensity={0.8} />
+      <hemisphereLight args={["#ffffff", "#e0e0e0", 1]} />
+      <Environment preset="warehouse" background />
+      {/* Floor */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1, 0]} receiveShadow>
+        <planeGeometry args={[30, 30]} />
+        <meshStandardMaterial color="#f0f0f0" roughness={0.3} metalness={0.1} />
+      </mesh>
       <Suspense fallback={<LoadingFallback />}>
         <CarModel path={path} />
       </Suspense>
     </>
   );
 }
+
+
 
 // Preload all models to avoid fallback box on initial render
 availableModels.forEach((m) => useGLTF.preload(m.path));
