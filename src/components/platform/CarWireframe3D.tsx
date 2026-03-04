@@ -24,15 +24,7 @@ interface CarWireframe3DProps {
 function CarModel({ path }: { path: string }) {
   const groupRef = useRef<THREE.Group>(null);
 
-  let scene: THREE.Group | null = null;
-  let loadError = false;
-
-  try {
-    const gltf = useGLTF(path);
-    scene = gltf.scene;
-  } catch {
-    loadError = true;
-  }
+  const gltf = useGLTF(path);
 
   useFrame((_, delta) => {
     if (groupRef.current) {
@@ -40,24 +32,13 @@ function CarModel({ path }: { path: string }) {
     }
   });
 
-  if (loadError || !scene) {
-    return (
-      <group ref={groupRef}>
-        <mesh position={[0, 0.5, 0]}>
-          <boxGeometry args={[3, 0.8, 1.4]} />
-          <meshStandardMaterial color="#333" />
-        </mesh>
-      </group>
-    );
-  }
-
-  const cloned = scene.clone(true);
+  const cloned = gltf.scene.clone(true);
 
   // Auto-center and scale
   const box = new THREE.Box3().setFromObject(cloned);
   const size = box.getSize(new THREE.Vector3());
   const maxDim = Math.max(size.x, size.y, size.z);
-  const scale = 3.5 / maxDim;
+  const scale = 5 / maxDim;
   const center = box.getCenter(new THREE.Vector3());
 
   return (
@@ -109,7 +90,7 @@ function SceneContent({ path }: { path: string }) {
         sectionThickness={1}
         sectionColor="hsl(220, 15%, 20%)"
         fadeDistance={15}
-        position={[0, -0.01, 0]}
+        position={[0, -1, 0]}
       />
       <Suspense fallback={<LoadingFallback />}>
         <CarModel path={path} />
@@ -117,6 +98,9 @@ function SceneContent({ path }: { path: string }) {
     </>
   );
 }
+
+// Preload all models to avoid fallback box on initial render
+availableModels.forEach((m) => useGLTF.preload(m.path));
 
 export default function CarWireframe3D({ modelPath, label }: CarWireframe3DProps) {
   return (
