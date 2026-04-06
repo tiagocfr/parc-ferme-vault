@@ -1,6 +1,14 @@
-import { useRef, Suspense } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls, PerspectiveCamera, useGLTF, Environment } from "@react-three/drei";
+import { useRef, useMemo, Suspense } from "react";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import {
+  OrbitControls,
+  PerspectiveCamera,
+  useGLTF,
+  Environment,
+  ContactShadows,
+  AccumulativeShadows,
+  RandomizedLight,
+} from "@react-three/drei";
 import * as THREE from "three";
 import { motion } from "framer-motion";
 import { chartReveal } from "@/lib/animations";
@@ -23,30 +31,48 @@ interface CarWireframe3DProps {
 
 function CarModel({ path }: { path: string }) {
   const groupRef = useRef<THREE.Group>(null);
-
   const gltf = useGLTF(path);
+
+  const { cloned, scale, offset } = useMemo(() => {
+    const scene = gltf.scene.clone(true);
+
+    // Enhance materials for realism
+    scene.traverse((child: any) => {
+      if (child.isMesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+        if (child.material) {
+          child.material.envMapIntensity = 1.5;
+          child.material.needsUpdate = true;
+        }
+      }
+    });
+
+    const box = new THREE.Box3().setFromObject(scene);
+    const size = box.getSize(new THREE.Vector3());
+    const maxDim = Math.max(size.x, size.y, size.z);
+    const s = 5 / maxDim;
+    const center = box.getCenter(new THREE.Vector3());
+
+    return {
+      cloned: scene,
+      scale: s,
+      offset: new THREE.Vector3(-center.x * s, -center.y * s, -center.z * s),
+    };
+  }, [gltf]);
 
   useFrame((_, delta) => {
     if (groupRef.current) {
-      groupRef.current.rotation.y += delta * 0.15;
+      groupRef.current.rotation.y += delta * 0.12;
     }
   });
 
-  const cloned = gltf.scene.clone(true);
-
-  // Auto-center and scale
-  const box = new THREE.Box3().setFromObject(cloned);
-  const size = box.getSize(new THREE.Vector3());
-  const maxDim = Math.max(size.x, size.y, size.z);
-  const scale = 5 / maxDim;
-  const center = box.getCenter(new THREE.Vector3());
-
   return (
-    <group ref={groupRef}>
+    <group ref={groupRef} position={[0, -0.5, 0]}>
       <primitive
         object={cloned}
         scale={[scale, scale, scale]}
-        position={[-center.x * scale, -center.y * scale + 0.01, -center.z * scale]}
+        position={[offset.x, offset.y, offset.z]}
       />
     </group>
   );
@@ -58,35 +84,78 @@ function LoadingFallback() {
     if (ref.current) ref.current.rotation.y += delta * 0.5;
   });
   return (
-    <mesh ref={ref} position={[0, 0.5, 0]}>
+    <mesh ref={ref} position={[0, 0, 0]}>
       <boxGeometry args={[2, 0.6, 1]} />
-      <meshStandardMaterial color="#444" wireframe />
+      <meshStandardMaterial color="#666" wireframe />
     </mesh>
+  );
+}
+
+function StudioFloor() {
+  return (
+    <group position={[0, -1, 0]}>
+      {/* Reflective floor */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <circleGeometry args={[12, 64]} />
+        <meshStandardMaterial
+          color="#e8e8e8"
+          roughness={0.15}
+          metalness={0.05}
+        />
+      </mesh>
+      {/* Contact shadows for grounding */}
+      <ContactShadows
+        position={[0, 0.01, 0]}
+        opacity={0.6}
+        scale={20}
+        blur={2.5}
+        far={4}
+        color="#000000"
+      />
+    </group>
   );
 }
 
 function SceneContent({ path }: { path: string }) {
   return (
     <>
-      <PerspectiveCamera makeDefault position={[6, 3, 6]} fov={32} />
+      <PerspectiveCamera makeDefault position={[7, 3, 7]} fov={30} />
       <OrbitControls
         enableDamping
-        dampingFactor={0.08}
+        dampingFactor={0.05}
         enablePan={false}
-        minDistance={3}
-        maxDistance={14}
-        maxPolarAngle={Math.PI / 2.1}
+        minDistance={4}
+        maxDistance={16}
+        maxPolarAngle={Math.PI / 2.2}
+        autoRotate={false}
       />
-      <ambientLight intensity={1.8} />
-      <directionalLight position={[5, 8, 5]} intensity={1.5} />
-      <directionalLight position={[-5, 5, -5]} intensity={0.8} />
-      <hemisphereLight args={["#ffffff", "#e0e0e0", 1]} />
+
+      {/* Studio lighting */}
+      <ambientLight intensity={0.4} />
+      
+      {/* Key light */}
+      <directionalLight
+        position={[8, 10, 5]}
+        intensity={2}
+        castShadow
+        shadow-mapSize={[2048, 2048]}
+        shadow-bias={-0.0001}
+      />
+      
+      {/* Fill light */}
+      <directionalLight position={[-6, 6, -4]} intensity={1} />
+      
+      {/* Rim light */}
+      <directionalLight position={[0, 5, -8]} intensity={0.8} />
+      
+      {/* Soft hemisphere */}
+      <hemisphereLight args={["#ffffff", "#d0d0d0", 0.6]} />
+
+      {/* HDR environment for realistic reflections */}
       <Environment preset="warehouse" background />
-      {/* Floor */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1, 0]} receiveShadow>
-        <planeGeometry args={[30, 30]} />
-        <meshStandardMaterial color="#f0f0f0" roughness={0.3} metalness={0.1} />
-      </mesh>
+
+      <StudioFloor />
+
       <Suspense fallback={<LoadingFallback />}>
         <CarModel path={path} />
       </Suspense>
@@ -94,9 +163,7 @@ function SceneContent({ path }: { path: string }) {
   );
 }
 
-
-
-// Preload all models to avoid fallback box on initial render
+// Preload all models
 availableModels.forEach((m) => useGLTF.preload(m.path));
 
 export default function CarWireframe3D({ modelPath, label }: CarWireframe3DProps) {
@@ -123,8 +190,17 @@ export default function CarWireframe3D({ modelPath, label }: CarWireframe3DProps
           Arraste para rotacionar · Scroll para zoom
         </span>
       </div>
-      <div className="h-[320px] w-full bg-background/50">
-        <Canvas gl={{ antialias: true, alpha: true }} style={{ background: "transparent" }}>
+      <div className="h-[400px] w-full">
+        <Canvas
+          shadows
+          gl={{
+            antialias: true,
+            toneMapping: THREE.ACESFilmicToneMapping,
+            toneMappingExposure: 1.2,
+            outputColorSpace: THREE.SRGBColorSpace,
+          }}
+          style={{ background: "transparent" }}
+        >
           <SceneContent path={modelPath} />
         </Canvas>
       </div>
