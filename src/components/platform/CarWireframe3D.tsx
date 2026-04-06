@@ -1,13 +1,10 @@
 import { useRef, useMemo, Suspense } from "react";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { Canvas, useFrame } from "@react-three/fiber";
 import {
   OrbitControls,
   PerspectiveCamera,
   useGLTF,
   Environment,
-  ContactShadows,
-  AccumulativeShadows,
-  RandomizedLight,
 } from "@react-three/drei";
 import * as THREE from "three";
 import { motion } from "framer-motion";
@@ -29,20 +26,23 @@ interface CarWireframe3DProps {
   label?: string;
 }
 
+const DESIRED_SIZE = 5;
+const FLOOR_Y = 0;
+
 function CarModel({ path }: { path: string }) {
   const groupRef = useRef<THREE.Group>(null);
   const gltf = useGLTF(path);
 
-  const { cloned, scale, offset } = useMemo(() => {
+  const { cloned, scale, offsetX, offsetZ, baseY } = useMemo(() => {
     const scene = gltf.scene.clone(true);
 
-    // Enhance materials for realism
     scene.traverse((child: any) => {
       if (child.isMesh) {
         child.castShadow = true;
         child.receiveShadow = true;
         if (child.material) {
-          child.material.envMapIntensity = 1.5;
+          child.material.envMapIntensity = 1.2;
+          child.material.side = THREE.FrontSide;
           child.material.needsUpdate = true;
         }
       }
@@ -51,13 +51,16 @@ function CarModel({ path }: { path: string }) {
     const box = new THREE.Box3().setFromObject(scene);
     const size = box.getSize(new THREE.Vector3());
     const maxDim = Math.max(size.x, size.y, size.z);
-    const s = 5 / maxDim;
+    const s = DESIRED_SIZE / maxDim;
+
     const center = box.getCenter(new THREE.Vector3());
 
     return {
       cloned: scene,
       scale: s,
-      offset: new THREE.Vector3(-center.x * s, -center.y * s, -center.z * s),
+      offsetX: -center.x * s,
+      offsetZ: -center.z * s,
+      baseY: -box.min.y * s,
     };
   }, [gltf]);
 
@@ -68,51 +71,22 @@ function CarModel({ path }: { path: string }) {
   });
 
   return (
-    <group ref={groupRef} position={[0, -0.5, 0]}>
+    <group ref={groupRef} position={[0, FLOOR_Y, 0]}>
       <primitive
         object={cloned}
         scale={[scale, scale, scale]}
-        position={[offset.x, offset.y, offset.z]}
+        position={[offsetX, baseY, offsetZ]}
       />
     </group>
-  );
-}
-
-function LoadingFallback() {
-  const ref = useRef<THREE.Mesh>(null);
-  useFrame((_, delta) => {
-    if (ref.current) ref.current.rotation.y += delta * 0.5;
-  });
-  return (
-    <mesh ref={ref} position={[0, 0, 0]}>
-      <boxGeometry args={[2, 0.6, 1]} />
-      <meshStandardMaterial color="#666" wireframe />
-    </mesh>
   );
 }
 
 function StudioFloor() {
   return (
-    <group position={[0, -1, 0]}>
-      {/* Reflective floor */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <circleGeometry args={[12, 64]} />
-        <meshStandardMaterial
-          color="#e8e8e8"
-          roughness={0.15}
-          metalness={0.05}
-        />
-      </mesh>
-      {/* Contact shadows for grounding */}
-      <ContactShadows
-        position={[0, 0.01, 0]}
-        opacity={0.6}
-        scale={20}
-        blur={2.5}
-        far={4}
-        color="#000000"
-      />
-    </group>
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, FLOOR_Y - 0.01, 0]} receiveShadow>
+      <planeGeometry args={[50, 50]} />
+      <meshStandardMaterial color="#f0f0f0" roughness={0.4} metalness={0} />
+    </mesh>
   );
 }
 
@@ -126,44 +100,29 @@ function SceneContent({ path }: { path: string }) {
         enablePan={false}
         minDistance={4}
         maxDistance={16}
-        maxPolarAngle={Math.PI / 2.2}
+        maxPolarAngle={Math.PI / 2.1}
         autoRotate={false}
       />
 
-      {/* Studio lighting */}
-      <ambientLight intensity={0.4} />
-      
-      {/* Key light */}
-      <directionalLight
-        position={[8, 10, 5]}
-        intensity={2}
-        castShadow
-        shadow-mapSize={[2048, 2048]}
-        shadow-bias={-0.0001}
-      />
-      
-      {/* Fill light */}
-      <directionalLight position={[-6, 6, -4]} intensity={1} />
-      
-      {/* Rim light */}
-      <directionalLight position={[0, 5, -8]} intensity={0.8} />
-      
-      {/* Soft hemisphere */}
-      <hemisphereLight args={["#ffffff", "#d0d0d0", 0.6]} />
+      <color attach="background" args={["#f5f5f5"]} />
 
-      {/* HDR environment for realistic reflections */}
-      <Environment preset="warehouse" background />
+      <ambientLight intensity={0.5} />
+      <directionalLight position={[8, 10, 5]} intensity={1.5} castShadow shadow-mapSize={[1024, 1024]} shadow-bias={-0.0001} />
+      <directionalLight position={[-6, 6, -4]} intensity={0.8} />
+      <directionalLight position={[0, 5, -8]} intensity={0.5} />
+      <hemisphereLight args={["#ffffff", "#e0e0e0", 0.4]} />
+
+      <Environment preset="warehouse" />
 
       <StudioFloor />
 
-      <Suspense fallback={<LoadingFallback />}>
+      <Suspense fallback={null}>
         <CarModel path={path} />
       </Suspense>
     </>
   );
 }
 
-// Preload all models
 availableModels.forEach((m) => useGLTF.preload(m.path));
 
 export default function CarWireframe3D({ modelPath, label }: CarWireframe3DProps) {
@@ -196,10 +155,9 @@ export default function CarWireframe3D({ modelPath, label }: CarWireframe3DProps
           gl={{
             antialias: true,
             toneMapping: THREE.ACESFilmicToneMapping,
-            toneMappingExposure: 1.2,
+            toneMappingExposure: 1.1,
             outputColorSpace: THREE.SRGBColorSpace,
           }}
-          style={{ background: "transparent" }}
         >
           <SceneContent path={modelPath} />
         </Canvas>
